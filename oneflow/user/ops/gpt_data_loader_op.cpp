@@ -46,7 +46,7 @@ namespace oneflow {
     const user_op::UserOpConfWrapper& conf) -> Maybe<void> {
   if (!conf.has_input("iteration", 0)) { return Maybe<void>::Ok(); }
   user_op::InputArgModifier* input_modifier = GetInputArgModifierFn("iteration", 0);
-  CHECK_OR_RETURN(input_modifier != nullptr);
+  CHECK_OR_RETURN(input_modifier != nullptr);  // NOLINT(maybe-need-error-msg)
   input_modifier->set_is_mutable(true);
   input_modifier->set_requires_grad(false);
   return Maybe<void>::Ok();

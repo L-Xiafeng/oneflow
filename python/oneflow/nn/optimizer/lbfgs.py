@@ -102,11 +102,12 @@ class LBFGS(Optimizer):
             with flow.enable_grad():
                 origin_loss = closure()
             loss = float(origin_loss)
+            print("in step,loss: ", loss)
             current_evals = 1
             state["func_evals"] += 1
 
             flat_grad = self._gather_flat_grad()
-
+            print("in step,flat_grad: ", flat_grad)
             if flat_grad.abs().max() <= tolerance_grad:
                 return origin_loss
 
@@ -119,7 +120,7 @@ class LBFGS(Optimizer):
             H_diag = state.get("H_diag")
             prev_flat_grad = state.get("prev_flat_grad")
             prev_loss = state.get("prev_loss")
-
+            print("in step,state: ", state)
             n_iter = 0
 
             while n_iter < max_iter:
@@ -138,6 +139,7 @@ class LBFGS(Optimizer):
                     s = d.mul(t)
                     ys = y.dot(s)
                     # ys must be positive
+                    print("in step,n_iter: ", n_iter, ",ys: ", ys)
                     if ys > 1e-10:
                         if len(old_diffs) == history_size:
                             old_diffs.pop(0)
@@ -147,6 +149,13 @@ class LBFGS(Optimizer):
                         old_step_size.append(s)
                         ro.append(1.0 / ys)
                         H_diag = ys / y.dot(y)
+                    print("in step,n_iter: ", n_iter)
+                    print("old_diffs: ", old_diffs)
+                    print("old_step_size: ", old_step_size)
+                    print("y: ", y)
+                    print("s: ", s)
+                    print("ro: ", ro)
+                    print("H_diag", H_diag)
 
                     num_old = len(old_diffs)
 
@@ -155,7 +164,6 @@ class LBFGS(Optimizer):
                     alpha = state["alpha"]
 
                     q = flat_grad.neg()
-                    # import pdb; pdb.set_trace()
                     for i in range(num_old - 1, -1, -1):
                         alpha[i] = old_step_size[i].dot(q) * ro[i]
                         q.add_(old_diffs[i], alpha=-alpha[i])
@@ -164,6 +172,8 @@ class LBFGS(Optimizer):
                     for i in range(num_old):
                         beta_i = old_diffs[i].dot(d) * ro[i]
                         d.add_(old_step_size[i], alpha=alpha[i] - beta_i)
+                    print("d: ", d)
+                    print("alpha: ", alpha)
 
                 # compute step size
                 if prev_flat_grad is None:
@@ -190,23 +200,30 @@ class LBFGS(Optimizer):
                             loss = float(closure())
                         flat_grad = self._gather_flat_grad()
                         ls_func_evals += 1
+                        print("new loss: ", loss)
+                        print("new flat_grad: ", flat_grad)
 
                 current_evals += ls_func_evals
                 state["func_evals"] += ls_func_evals
 
                 if n_iter == max_iter:
+                    print("early quit")
                     break
 
                 if current_evals >= max_eval:
+                    print("early quit")
                     break
 
                 if flat_grad.abs().max() <= tolerance_grad:
+                    print("early quit")
                     break
 
                 if d.mul(t).abs().max() <= tolerance_change:
+                    print("early quit")
                     break
 
                 if abs(loss - prev_loss) < tolerance_change:
+                    print("early quit")
                     break
 
             state["d"] = d
@@ -217,4 +234,5 @@ class LBFGS(Optimizer):
             state["prev_flat_grad"] = prev_flat_grad
             state["prev_loss"] = prev_loss
             state["H_diag"] = H_diag
+            print("new state: ", state)
             return origin_loss
